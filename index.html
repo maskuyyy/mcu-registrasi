@@ -33,8 +33,10 @@ body{background:#fff}header,nav,main>.page{display:none!important}#printArea{dis
 .label .title{font-size:11px;font-weight:bold}.label .name{font-size:17px;font-weight:bold;margin:3px 0}.label .type{font-size:15px;font-weight:bold;margin-top:4px}
 .registration-top{display:grid;grid-template-columns:minmax(220px,310px) 1fr;gap:16px;align-items:start}.photo-box{border:1px dashed #9eb4cc;border-radius:10px;padding:12px;background:#f8fbff}.photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e8eef5;display:block}.photo-placeholder{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:18px}.camera-live{width:100%;margin-top:10px;border-radius:8px;background:#111;display:none}.package-summary{border:1px solid #bed6ef;background:#f3f8fe;border-radius:9px;padding:11px;margin:8px 0}.package-summary ul{margin:7px 0 0;padding-left:20px}.data-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line);vertical-align:middle}.data-photo.placeholder{background:#edf2f7;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
 .modal-backdrop{display:none;position:fixed;inset:0;background:#17203399;z-index:80;padding:16px;align-items:center;justify-content:center}.modal-backdrop.open{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 12px 30px #0005}.modal h3{margin:0 0 6px}
+.auth-gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:#173b68}.auth-card{width:min(420px,100%);background:#fff;border-radius:14px;padding:24px;box-shadow:0 18px 45px #0006}.auth-card h2{margin-top:0}.auth-card .hint{margin-bottom:14px}
 @media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 window.XLSX_READY=false;
@@ -80,6 +82,7 @@ function exportXLSX(){
 .badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#edf4ff;margin:2px}
 </style></head>
 <body>
+<div id="authGate" class="auth-gate"><div class="auth-card"><h2>MCU Registrasi</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button><button class="gray" onclick="signUpStaff()">Daftar Petugas</button></div><p id="authMessage" class="hint"></p></div></div>
 <header><h1>MCU REGISTRASI V2</h1><small>Demo sistem pendaftaran Medical Check Up — tanpa login</small></header>
 <nav id="nav">
 <button data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
@@ -704,6 +707,81 @@ function addLabel(){let n=prompt('Nama label baru:');if(n&&n.trim()&&!labels.inc
 function saveSettings(){localStorage.setItem(SETKEY,JSON.stringify(labels));renderChecks();renderSettings();renderPackageChecks([]);toast('Jenis label disimpan')}
 function toast(s){let t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>t.style.display='none',2200)}
 $('labelW').value=labelSize.w;$('labelH').value=labelSize.h;$('labelM').value=labelSize.m;applyLabelSize();syncLabelPreset();renderPackages();renderSettings();renderPackageChecks([]);syncPackageSelect();resetForm();updateDash();renderRegistrationSearch();renderEditRegistrationSearch();showPage('dashboard');
+</script>
+<script>
+/* Sinkronisasi Supabase: kunci anon aman di browser karena seluruh tabel memakai RLS. */
+const SUPABASE_URL='https://tabvlkwmkgvmqcgttfyu.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnZsa3dta2d2bXFjZ3R0Znl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MjU5OTgsImV4cCI6MjEwNTQwMTk5OH0.uPhJOBY1BDNyINyvDyMtlIClgdUv_Yu0RcNZ2T28hlY';
+let sb=null,remoteReady=false,remoteTimer=null;
+const splitLabels=v=>Array.isArray(v)?v:(v||'').split('|').filter(Boolean);
+const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v||'');
+function authMessage(text,problem=false){let e=$('authMessage');e.textContent=text;e.style.color=problem?'#b42318':'var(--muted)'}
+function showAuth(){ $('authGate').style.display='flex';remoteReady=false }
+function hideAuth(){ $('authGate').style.display='none' }
+async function signInStaff(){
+ if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=$('authEmail').value.trim(),password=$('authPassword').value;
+ if(!email||!password)return authMessage('Masukkan email dan kata sandi.',true);authMessage('Memeriksa akun…');
+ let {error}=await sb.auth.signInWithPassword({email,password});if(error)return authMessage(error.message,true);
+ await startRemote();
+}
+async function signUpStaff(){
+ if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=$('authEmail').value.trim(),password=$('authPassword').value;
+ if(!email||password.length<6)return authMessage('Gunakan email dan kata sandi minimal 6 karakter.',true);authMessage('Mendaftarkan akun…');
+ let {data:a,error}=await sb.auth.signUp({email,password});if(error)return authMessage(error.message,true);
+ authMessage(a.session?'Akun berhasil dibuat.':'Periksa email untuk mengonfirmasi akun, lalu masuk.');if(a.session)await startRemote();
+}
+function rowFromParticipant(x){
+ if(!isUuid(x.id))x.id=crypto.randomUUID();
+ return {id:x.id,reg:x.reg||null,tgl:x.tgl||null,nik:x.nik||null,nama:x.nama||'',jk:x.jk||null,lahir:x.lahir||null,usia:+x.usia||null,hp:x.hp||null,perusahaan:x.perusahaan||null,bagian:x.bagian||null,jabatan:x.jabatan||null,paket:x.paket||null,labels:splitLabels(x.labels),print_labels:splitLabels(x.printLabels||x.labels),photo_path:x.photoPath||null,ket:x.ket||null,printed:!!x.printed,updated_at:new Date().toISOString()};
+}
+async function uploadPhoto(x){
+ if(!x.photo||!x.photo.startsWith('data:'))return;
+ let blob=await (await fetch(x.photo)).blob(),path=x.id+'.jpg';
+ let {error}=await sb.storage.from('participant-photos').upload(path,blob,{upsert:true,contentType:blob.type||'image/jpeg'});
+ if(error)throw error;x.photoPath=path;
+}
+async function syncRemoteData(){
+ if(!remoteReady||!sb)return;
+ try{for(let x of data){await uploadPhoto(x);let {error}=await sb.from('mcu_participants').upsert(rowFromParticipant(x));if(error)throw error}}
+ catch(e){console.warn('Sinkronisasi peserta gagal',e);toast('Perubahan lokal tersimpan; sinkronisasi akan dicoba lagi.')}
+}
+function scheduleRemoteSync(){clearTimeout(remoteTimer);remoteTimer=setTimeout(syncRemoteData,500)}
+async function saveRemoteSetting(key,value){
+ if(!remoteReady||!sb)return;let {error}=await sb.from('mcu_settings').upsert({key,value,updated_at:new Date().toISOString()});if(error)console.warn('Sinkronisasi pengaturan gagal',error)
+}
+async function dataUrlFromPath(path){
+ let {data:blob,error}=await sb.storage.from('participant-photos').download(path);if(error||!blob)return '';
+ return await new Promise(r=>{let f=new FileReader();f.onload=()=>r(f.result);f.onerror=()=>r('');f.readAsDataURL(blob)});
+}
+async function loadRemoteData(){
+ let [{data:rows,error},{data:settings,error:settingsError}]=await Promise.all([sb.from('mcu_participants').select('*').order('created_at'),sb.from('mcu_settings').select('*')]);
+ if(error)throw error;if(settingsError)throw settingsError;
+ let map=Object.fromEntries((settings||[]).map(x=>[x.key,x.value]));
+ if(map.packages)packages=map.packages;if(map.labels)labels=map.labels;if(map.labelSize)labelSize=map.labelSize;
+ if((rows||[]).length){data=rows.map(r=>({id:r.id,reg:r.reg||'',tgl:r.tgl||'',nik:r.nik||'',nama:r.nama||'',jk:r.jk||'',lahir:r.lahir||'',usia:r.usia||'',hp:r.hp||'',perusahaan:r.perusahaan||'',bagian:r.bagian||'',jabatan:r.jabatan||'',paket:r.paket||'',labels:splitLabels(r.labels).join('|'),printLabels:splitLabels(r.print_labels).join('|'),photo:'',photoPath:r.photo_path||'',ket:r.ket||'',printed:!!r.printed}));}
+ else if(data.length)await syncRemoteData();
+ localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(PKGKEY,JSON.stringify(packages));localStorage.setItem(SETKEY,JSON.stringify(labels));localStorage.setItem(SIZEKEY,JSON.stringify(labelSize));
+ applyLabelSize();syncLabelPreset();renderPackages();renderSettings();renderPackageChecks([]);syncPackageSelect();resetForm();updateDash();renderRegistrationSearch();renderEditRegistrationSearch();renderTable();
+ await Promise.all(data.filter(x=>x.photoPath).map(async x=>{x.photo=await dataUrlFromPath(x.photoPath)}));renderTable();
+}
+async function startRemote(){
+ remoteReady=true;hideAuth();authMessage('');
+ try{await loadRemoteData()}catch(e){console.error(e);showAuth();authMessage('Data tidak dapat dimuat: '+e.message,true)}
+}
+const saveLocalBeforeSupabase=saveLocal;
+saveLocal=function(){saveLocalBeforeSupabase();scheduleRemoteSync()}
+const savePackagesBeforeSupabase=savePackages;
+savePackages=function(){savePackagesBeforeSupabase();saveRemoteSetting('packages',packages)}
+const saveSettingsBeforeSupabase=saveSettings;
+saveSettings=function(){saveSettingsBeforeSupabase();saveRemoteSetting('labels',labels)}
+const saveLabelSizeBeforeSupabase=saveLabelSize;
+saveLabelSize=function(){saveLabelSizeBeforeSupabase();saveRemoteSetting('labelSize',labelSize)}
+async function initSupabase(){
+ if(!window.supabase)return authMessage('Library Supabase tidak dapat dimuat. Periksa koneksi internet.',true);
+ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let {data:{session}}=await sb.auth.getSession();if(session)await startRemote();else showAuth();
+ sb.auth.onAuthStateChange((_event,session)=>{if(!session)showAuth()});
+}
+initSupabase();
 </script>
 </body>
 </html>
