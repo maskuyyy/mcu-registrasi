@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCU REGISTRASI V2 - Import Fix</title>
+<style>
+:root{--p:#173b68;--bg:#f4f7fb;--line:#dbe2ea;--text:#172033;--muted:#667085}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--p);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:21px}header small{opacity:.85}
+nav{display:flex;gap:7px;padding:9px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:9;overflow:auto}
+nav button{white-space:nowrap;background:#edf2f7;color:var(--p)}nav button.active{background:var(--p);color:#fff}
+main{max-width:1250px;margin:auto;padding:16px}.page{display:none}.page.active{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;margin-bottom:15px;box-shadow:0 2px 8px #00000008}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.num{font-size:28px;font-weight:700;margin-top:5px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}label{font-size:13px;font-weight:700}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;margin-top:5px;background:#fff;color:var(--text)}textarea{min-height:70px}
+button,.btn{border:0;border-radius:7px;padding:10px 13px;background:#1769aa;color:#fff;font-weight:700;cursor:pointer}.gray{background:#667085}.green{background:#218739}.danger{background:#c62828}.orange{background:#9a5b00}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.actions input{margin-top:0}.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:1000px}th,td{padding:9px;border-bottom:1px solid #e6ebf1;text-align:left;font-size:13px;vertical-align:middle}th{background:#eef3f8}
+.checkgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}.check{border:1px solid var(--line);padding:10px;border-radius:8px;background:#fafcff}.check input{width:auto;margin:0 7px 0 0}
+.badge{display:inline-block;padding:4px 7px;border-radius:99px;background:#e9f2ff;font-size:11px;margin:2px}.muted{color:var(--muted);font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:25px}.hint{font-size:12px;color:var(--muted);margin-top:6px}
+#toast{position:fixed;right:15px;bottom:15px;background:#172033;color:#fff;padding:12px 16px;border-radius:8px;display:none;z-index:50}
+#printArea{display:none}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.checkgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.cards,.grid,.checkgrid{grid-template-columns:1fr}main{padding:9px}.panel{padding:13px}}
+@media print{
+body{background:#fff}header,nav,main>.page{display:none!important}#printArea{display:block!important}
+}
+.label{width:var(--lw,90mm);min-height:var(--lh,36mm);margin:var(--lm,5mm) auto;border:1px solid #111;margin:5mm auto;padding:4mm;font-family:Arial;page-break-inside:avoid}
+.label .title{font-size:11px;font-weight:bold}.label .name{font-size:17px;font-weight:bold;margin:3px 0}.label .type{font-size:15px;font-weight:bold;margin-top:4px}
+.registration-top{display:grid;grid-template-columns:minmax(220px,310px) 1fr;gap:16px;align-items:start}.photo-box{border:1px dashed #9eb4cc;border-radius:10px;padding:12px;background:#f8fbff}.photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e8eef5;display:block}.photo-placeholder{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:18px}.camera-live{width:100%;margin-top:10px;border-radius:8px;background:#111;display:none}.package-summary{border:1px solid #bed6ef;background:#f3f8fe;border-radius:9px;padding:11px;margin:8px 0}.package-summary ul{margin:7px 0 0;padding-left:20px}.data-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line);vertical-align:middle}.data-photo.placeholder{background:#edf2f7;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:#17203399;z-index:80;padding:16px;align-items:center;justify-content:center}.modal-backdrop.open{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 12px 30px #0005}.modal h3{margin:0 0 6px}
+@media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}}
+</style>
+
+<script>
+window.XLSX_READY=false;
+function loadExcelLibrary(){
+ const urls=[
+  "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+  "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+ ];
+ let i=0;
+ function tryNext(){
+  if(i>=urls.length){window.XLSX_READY=false;return;}
+  const s=document.createElement('script');s.src=urls[i++];s.onload=()=>{window.XLSX_READY=typeof XLSX!=='undefined';};s.onerror=tryNext;document.head.appendChild(s);
+ }
+ tryNext();
+}
+loadExcelLibrary();
+</script>
+<script>
+function exportXLSX(){
+ if(typeof XLSX==='undefined'){alert('Pembaca Excel belum siap. Pastikan internet aktif, tunggu beberapa detik, lalu coba lagi.');return}
+ let rows=data.map(x=>({
+  'No. Registrasi':x.reg,'Tanggal MCU':x.tgl,'NIK':x.nik,'Nama Lengkap':x.nama,
+  'Jenis Kelamin':x.jk,'Tanggal Lahir':x.lahir,'Usia':x.usia,'No. HP':x.hp,
+  'Perusahaan / Instansi':x.perusahaan,'Departemen / Bagian':x.bagian,'Jabatan':x.jabatan,
+  'Paket MCU':x.paket,'Pemeriksaan Peserta':x.labels,'Label Dicetak':x.printLabels||x.labels,'Ada Foto':x.photo?'Ya':'Tidak','Keterangan':x.ket,
+  'Status Registrasi':x.reg?'Sudah registrasi':'Belum datang / daftar','No. Registrasi':x.reg||'', 'Status Label':x.reg?(x.printed?'Sudah dicetak':'Belum dicetak'):'-'
+ }));
+ let ws=XLSX.utils.json_to_sheet(rows);
+ ws['!cols']=[{wch:16},{wch:15},{wch:20},{wch:25},{wch:16},{wch:16},{wch:8},{wch:16},{wch:27},{wch:24},{wch:20},{wch:22},{wch:35},{wch:35},{wch:12},{wch:30},{wch:22},{wch:16},{wch:18}];
+ if(rows.length) ws['!autofilter']={ref:`A1:S${rows.length+1}`};
+ ws['!freeze']={xSplit:0,ySplit:1};
+ let wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Data Peserta');
+ XLSX.writeFile(wb,'DATA_PESERTA_MCU_'+today()+'.xlsx');
+}
+</script>
+<style>
+.choicegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:8px}.label-list{display:flex;flex-wrap:wrap;gap:8px}
+.choice{display:flex;align-items:center;gap:8px;border:1px solid #d7e0ea;border-radius:9px;padding:9px 10px;background:#f8fbff;cursor:pointer}.choice.compact{min-height:52px}
+.choice:hover{border-color:#2f80ed;background:#eef6ff}
+.choice input{width:18px;height:18px}
+.choice span{display:flex;flex-direction:column;gap:2px;flex:1}.choice select{width:58px;padding:5px;margin:0}.choice select:disabled{opacity:.45}
+.choice small{color:#6b7280}
+.badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#edf4ff;margin:2px}
+</style></head>
+<body>
+<header><h1>MCU REGISTRASI V2</h1><small>Demo sistem pendaftaran Medical Check Up — tanpa login</small></header>
+<nav id="nav">
+<button data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
+<button data-page="registrasi" onclick="showPage('registrasi')">+ Registrasi Kedatangan</button>
+<button data-page="data" onclick="showPage('data')">Data Registrasi</button>
+<button data-page="import" onclick="showPage('import')">Import / Export</button>
+<button data-page="pengaturan" onclick="showPage('pengaturan')">Pengaturan MCU</button>
+</nav>
+
+<main>
+<section id="dashboard" class="page">
+<div class="cards">
+<div class="card">Sudah Registrasi<div class="num" id="dTotal">0</div></div>
+<div class="card">MCU Hari Ini<div class="num" id="dToday">0</div></div>
+<div class="card">Belum Cetak Label<div class="num" id="dUnprinted">0</div></div>
+<div class="card">Daftar Import<div class="num" id="dImported">0</div></div>
+</div>
+<div class="panel" style="margin-top:15px">
+<h3>Peserta Terbaru</h3><div id="recent"></div>
+</div>
+</section>
+
+<section id="registrasi" class="page">
+<div class="panel">
+<h2>🔎 Cari Peserta dari Daftar Import</h2>
+<p class="muted">Cari nama/NIK/perusahaan dari daftar Excel. Peserta belum mendapat nomor registrasi sampai tombol <b>Daftarkan Kedatangan</b> ditekan.</p>
+<div class="actions">
+<input id="regSearch" placeholder="Ketik nama, NIK, perusahaan..." oninput="renderRegistrationSearch()" style="flex:1;min-width:230px">
+<button class="gray" onclick="clearRegistrationSearch()">Bersihkan</button>
+<button class="danger" onclick="deleteSelectedImported()">Hapus Terpilih</button>
+<button class="danger" onclick="deleteAllImported()">Hapus Semua Daftar Import</button>
+</div>
+<div class="tablewrap" style="margin-top:10px">
+<table><thead><tr><th><input type="checkbox" onclick="toggleImportedVisible(this)"></th><th>Nama</th><th>NIK</th><th>Perusahaan</th><th>Tgl MCU</th><th>Paket</th><th>Aksi</th></tr></thead>
+<tbody id="regSearchBody"></tbody></table>
+</div>
+</div>
+
+<div class="panel">
+<h2>✏️ Edit Registrasi yang Sudah Masuk</h2>
+<p class="muted">Gunakan menu ini jika petugas menemukan typo setelah peserta sudah mendapatkan nomor registrasi. Nomor registrasi tidak berubah.</p>
+<div class="actions">
+<input id="editRegSearch" placeholder="Cari nama / NIK / no. registrasi..." oninput="renderEditRegistrationSearch()" style="flex:1;min-width:230px">
+<button class="gray" onclick="clearEditRegistrationSearch()">Bersihkan</button>
+</div>
+<div class="tablewrap" style="margin-top:10px">
+<table><thead><tr><th>No. Reg</th><th>Nama</th><th>NIK</th><th>Perusahaan</th><th>Tgl MCU</th><th>Aksi</th></tr></thead>
+<tbody id="editRegSearchBody"></tbody></table>
+</div>
+</div>
+
+<div class="panel">
+<h2 id="formTitle">Registrasi Kedatangan</h2>
+<input type="hidden" id="editId"><input type="hidden" id="sourceId">
+<div class="registration-top">
+<div class="photo-box">
+<label>Foto Peserta</label>
+<img id="photoPreview" class="photo-preview photo-placeholder" alt="Preview foto peserta">
+<video id="cameraLive" class="camera-live" autoplay playsinline muted></video>
+<canvas id="photoCanvas" hidden></canvas>
+<div class="actions" style="margin-top:10px">
+<button type="button" onclick="startCamera()">📷 Buka Kamera</button>
+<button type="button" id="captureBtn" onclick="capturePhoto()" style="display:none">Ambil Foto</button>
+<button type="button" class="gray" onclick="retakePhoto()">Ulangi Foto</button>
+</div>
+<input id="photoUpload" type="file" accept="image/*" capture="user" onchange="uploadPhoto(event)" style="margin-top:10px">
+<div class="hint">Kamera meminta izin browser. Jika tidak tersedia, pilih foto dari komputer/ponsel.</div>
+</div>
+<div class="grid">
+<div><label>No. Registrasi Kedatangan</label><input id="reg" readonly placeholder="Dibuat saat peserta didaftarkan"></div>
+<div><label>Tanggal MCU *</label><input id="tgl" type="date"></div>
+<div><label>NIK</label><input id="nik" placeholder="NIK peserta"></div>
+<div><label>Nama Lengkap *</label><input id="nama" placeholder="Nama lengkap"></div>
+<div><label>Jenis Kelamin</label><select id="jk"><option value="">Pilih</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+<div><label>Tanggal Lahir</label><input id="lahir" type="date" onchange="calcAge()"></div>
+<div><label>Usia</label><input id="usia" readonly></div>
+<div><label>No. HP</label><input id="hp"></div>
+<div><label>Perusahaan / Instansi</label><input id="perusahaan"></div>
+<div><label>Departemen / Bagian</label><input id="bagian"></div>
+<div><label>Jabatan</label><input id="jabatan"></div>
+<div><label>Paket MCU</label><select id="paket" onchange="applySelectedPackage()"><option>MCU Karyawan</option><option>MCU Pra-Kerja</option><option>MCU Berkala</option><option>MCU Lengkap</option><option>Lainnya</option></select></div>
+</div>
+</div>
+<h3>📦 Pemeriksaan dalam Paket</h3>
+<div id="packageSummary" class="package-summary"><span class="muted">Pilih paket untuk melihat pemeriksaan yang termasuk di dalamnya.</span></div>
+<h3>Label Pemeriksaan</h3>
+<div class="checkgrid" id="checkgrid"></div>
+<h3>🏷️ Label yang Akan Dicetak</h3>
+<p class="muted">Pilihan ini terpisah dari pemeriksaan peserta. Hanya label yang dicentang di sini yang dicetak.</p>
+<div class="actions"><button type="button" class="gray" onclick="selectAllPrintLabels()">Pilih Semua</button><button type="button" class="gray" onclick="clearPrintLabels()">Hapus Semua</button><button type="button" onclick="printCurrentSelectedLabels()">🖨 Cetak Label Terpilih</button></div>
+<div class="checkgrid" id="printLabelGrid"></div>
+<div style="margin-top:12px"><label>Keterangan</label><textarea id="ket" placeholder="Keterangan tambahan"></textarea></div>
+<div class="actions" style="margin-top:14px">
+<button id="saveBtn" onclick="saveParticipant()">Daftarkan Kedatangan</button>
+<button class="gray" onclick="resetForm()">Reset / Batal Edit</button>
+<button class="orange" onclick="saveAndPrint()">Simpan & Cetak Label</button>
+</div>
+</div>
+</section>
+
+<section id="data" class="page">
+<div class="panel">
+<div class="actions">
+<input id="search" placeholder="Cari nama / NIK / perusahaan / no. registrasi" oninput="renderTable()" style="flex:1;min-width:220px">
+<input id="filterDate" type="date" onchange="renderTable()" style="max-width:170px">
+<select id="filterCompany" onchange="renderTable()" style="max-width:220px"><option value="">Semua perusahaan</option></select>
+</div>
+<div class="actions" style="margin-top:10px">
+<button class="gray" onclick="selectVisible()">Pilih Semua</button>
+<button onclick="printSelected()">Cetak Label Terpilih</button>
+<button class="green" onclick="markPrinted()">Tandai Sudah Dicetak</button>
+<button class="danger" onclick="deleteSelected()">Hapus Terpilih</button>
+</div>
+<div class="tablewrap" style="margin-top:12px">
+<table><thead><tr><th><input type="checkbox" onclick="toggleVisible(this)"></th><th>Foto</th><th>No. Reg</th><th>Tanggal</th><th>Nama</th><th>NIK</th><th>Perusahaan</th><th>Paket</th><th>Label</th><th>Status</th><th>Aksi</th></tr></thead>
+<tbody id="tbody"></tbody></table>
+</div>
+</div>
+</section>
+
+<section id="import" class="page">
+<div class="panel">
+<h2>📊 Import / Export Data Peserta</h2>
+<p class="muted">Import Excel hanya membuat <b>daftar calon peserta</b>. Peserta belum mendapat nomor registrasi. Nomor registrasi baru dibuat saat peserta benar-benar datang ke resepsionis.</p><div id="excelStatus" class="hint">⏳ Menyiapkan pembaca Excel...</div>
+<div class="actions">
+<button onclick="exportXLSX()">📤 Export Excel (.xlsx)</button>
+<label class="btn">📥 Import Excel / CSV
+<input id="importFile" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="importCSV(event)" style="display:none">
+</label>
+<button class="gray" onclick="downloadTemplate()">📄 Template Excel</button><button class="gray" onclick="downloadCSVTemplate()">📄 Template CSV</button>
+</div>
+</div>
+
+<div class="panel">
+<h3>📑 Format Template Import</h3>
+<p class="muted">File Excel berisi <b>daftar calon peserta</b>. Kolom No. Registrasi tidak diperlukan. Nomor registrasi akan dibuat berurutan berdasarkan kedatangan di resepsionis.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>No.</th><th>Nama Kolom</th><th>Wajib</th><th>Keterangan</th><th>Contoh</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><b>Tanggal MCU</b></td><td>Ya</td><td>Tanggal pelaksanaan MCU</td><td>18/09/2026</td></tr>
+<tr><td>2</td><td><b>NIK</b></td><td>Tidak</td><td>Nomor identitas peserta</td><td>327xxxxxxxxxxxxx</td></tr>
+<tr><td>3</td><td><b>Nama Lengkap</b></td><td>Ya</td><td>Nama peserta</td><td>Ahmad Fauzi</td></tr>
+<tr><td>4</td><td>Jenis Kelamin</td><td>Tidak</td><td>Laki-laki / Perempuan</td><td>Laki-laki</td></tr>
+<tr><td>5</td><td>Tanggal Lahir</td><td>Tidak</td><td>Tanggal lahir peserta</td><td>12/05/1995</td></tr>
+<tr><td>6</td><td>No. HP</td><td>Tidak</td><td>Nomor telepon</td><td>08123456789</td></tr>
+<tr><td>7</td><td><b>Perusahaan / Instansi</b></td><td>Tidak</td><td>Nama perusahaan/instansi</td><td>PT Contoh Sejahtera</td></tr>
+<tr><td>8</td><td>Departemen / Bagian</td><td>Tidak</td><td>Unit kerja</td><td>Produksi</td></tr>
+<tr><td>9</td><td>Jabatan</td><td>Tidak</td><td>Jabatan peserta</td><td>Operator</td></tr>
+<tr><td>10</td><td>Paket MCU</td><td>Tidak</td><td>Nama paket yang sudah dibuat di Pengaturan</td><td>MCU Karyawan</td></tr>
+<tr><td>11</td><td>Keterangan</td><td>Tidak</td><td>Catatan tambahan</td><td>Peserta baru</td></tr>
+</tbody>
+</table>
+</div>
+<p class="hint">💡 Tips: Jangan mengubah nama/header kolom. Satu baris = satu peserta. <b>Jika file dibuka tanpa internet, gunakan Template CSV</b>; CSV dapat diimport tanpa modul Excel.</p>
+</div>
+
+<div class="panel">
+<h3>🔄 Contoh Alur</h3>
+<div class="grid">
+<div class="card"><b>1. Download Template</b><p class="muted">Ambil template Excel kosong.</p></div>
+<div class="card"><b>2. Isi Peserta</b><p class="muted">Masukkan daftar peserta dari perusahaan.</p></div>
+<div class="card"><b>3. Import</b><p class="muted">Upload file Excel ke sistem.</p></div>
+</div>
+</div>
+</section>
+
+<section id="pengaturan" class="page">
+<div class="panel">
+<h2>Pengaturan Paket Pemeriksaan</h2>
+<p class="muted">Atur paket MCU berdasarkan <b>jenis label yang sudah Anda buat</b>. Tidak perlu mengetik nama pemeriksaan lagi.</p>
+<div class="grid">
+<div><label>Nama Paket</label><input id="pkgName" placeholder="Contoh: MCU Karyawan"></div>
+<div style="grid-column:1/-1"><label>Pilih Jenis Label untuk Paket</label>
+<div id="packageChecks" class="choicegrid"></div>
+</div>
+</div>
+<div class="actions" style="margin-top:12px"><button onclick="addPackage()">+ Tambah Paket</button><button class="green" onclick="savePackages()">Simpan Paket</button></div>
+<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Paket</th><th>Pemeriksaan & jumlah label</th><th>Aksi</th></tr></thead><tbody id="pkgBody"></tbody></table></div>
+</div>
+
+<div class="panel">
+<h2>Pengaturan Ukuran Label</h2>
+<div>
+<label>Pilih ukuran label</label>
+<div class="choicegrid">
+<label class="choice"><input type="radio" name="labelPreset" value="50x30" onchange="applyPresetLabel('50x30')"><span><b>50 × 30 mm</b><small>Label kecil</small></span></label>
+<label class="choice"><input type="radio" name="labelPreset" value="70x30" onchange="applyPresetLabel('70x30')"><span><b>70 × 30 mm</b><small>Label sedang</small></span></label>
+<label class="choice"><input type="radio" name="labelPreset" value="70x40" onchange="applyPresetLabel('70x40')"><span><b>70 × 40 mm</b><small>Label sedang tinggi</small></span></label>
+<label class="choice"><input type="radio" name="labelPreset" value="90x36" onchange="applyPresetLabel('90x36')"><span><b>90 × 36 mm</b><small>Label lebar</small></span></label>
+<label class="choice"><input type="radio" name="labelPreset" value="100x50" onchange="applyPresetLabel('100x50')"><span><b>100 × 50 mm</b><small>Label besar</small></span></label>
+<label class="choice"><input type="radio" name="labelPreset" value="custom" onchange="showCustomLabel()"><span><b>Custom</b><small>Atur sendiri</small></span></label>
+</div>
+</div>
+<div id="customLabelBox" class="grid" style="display:none;margin-top:12px">
+<div><label>Lebar (mm)</label><input id="labelW" type="number" min="20" value="90"></div>
+<div><label>Tinggi (mm)</label><input id="labelH" type="number" min="15" value="36"></div>
+<div><label>Jarak antar label (mm)</label><input id="labelM" type="number" min="0" value="5"></div>
+</div>
+<div class="actions" style="margin-top:12px"><button class="green" onclick="saveLabelSize()">Simpan Ukuran Label</button></div>
+<p class="hint">Ukuran ini digunakan saat mencetak label. Sesuaikan dengan ukuran stiker/printer Anda.</p>
+</div>
+
+<div class="panel">
+<h2>Jenis Label</h2>
+<p class="muted">Buat jenis label satu kali. Jenis label inilah yang akan muncul sebagai pilihan saat membuat paket.</p>
+<div id="settingsGrid" class="label-list"></div>
+<div class="actions" style="margin-top:12px"><button onclick="addLabel()">+ Tambah Jenis Label</button><button class="green" onclick="saveSettings()">Simpan</button></div>
+</div>
+</section>
+</main>
+<div id="printArea"></div><div id="toast"></div>
+<div id="labelPickerModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="labelPickerTitle">
+  <div class="modal"><h3 id="labelPickerTitle">Pilih Label untuk Dicetak</h3><p id="labelPickerHint" class="muted"></p>
+  <div class="actions"><button type="button" class="gray" onclick="selectAllPickerLabels()">Pilih Semua</button><button type="button" class="gray" onclick="clearPickerLabels()">Hapus Semua</button></div>
+  <div id="labelPickerGrid" class="checkgrid" style="margin:12px 0"></div>
+  <div class="actions"><button type="button" onclick="confirmPickerPrint()">🖨 Cetak Label Terpilih</button><button type="button" class="gray" onclick="closeLabelPicker()">Batal</button></div></div>
+</div>
+
+<script>
+
+const PKGKEY='MCU_REG_V2_PACKAGES';
+const SIZEKEY='MCU_REG_V2_LABELSIZE';
+let packages=JSON.parse(localStorage.getItem(PKGKEY)||'[]');
+let labelSize=JSON.parse(localStorage.getItem(SIZEKEY)||'{"w":90,"h":36,"m":5}');
+function savePackages(){localStorage.setItem(PKGKEY,JSON.stringify(packages));renderPackages();syncPackageSelect();toast('Paket pemeriksaan disimpan')}
+
+function availableLabels(){return Array.isArray(labels)?labels:[]}
+
+function renderPackageChecks(selected=[]){
+ let box=$('packageChecks');if(!box)return;
+ let opts=availableLabels();
+ if(!opts.length){box.innerHTML='<div class="hint">Belum ada jenis label. Tambahkan label terlebih dahulu di bagian Jenis Label.</div>';return}
+ box.innerHTML=opts.map(t=>`<label class="choice compact"><input type="checkbox" value="${esc(t)}" ${selected.includes(t)?'checked':''} onchange="renderSelectedTestCounts()"><span><b>${esc(t)}</b><small>Jumlah label</small></span><select class="testCount" data-test="${esc(t)}" onclick="event.stopPropagation()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>`).join('');
+ renderSelectedTestCounts();
+}
+function renderSelectedTestCounts(){
+ let box=$('packageChecks');if(!box)return;
+ box.querySelectorAll('.choice').forEach(card=>{
+   let cb=card.querySelector('input[type=checkbox]'), sel=card.querySelector('select');
+   if(sel)sel.disabled=!cb.checked;
+ });
+}
+function getPackageTestsFromUI(){
+ let out=[],box=$('packageChecks');if(!box)return out;
+ box.querySelectorAll('.choice').forEach(card=>{
+   let cb=card.querySelector('input[type=checkbox]'),sel=card.querySelector('select');
+   if(cb?.checked)out.push({name:cb.value,count:parseInt(sel?.value||1)||1});
+ });
+ return out;
+}
+function loadPackageToUI(p){
+ $('pkgName').value=p?.name||'';
+ let selected=p?.tests||[];
+ renderPackageChecks(selected);
+ selected.forEach(t=>{
+   let card=[...document.querySelectorAll('#packageChecks .choice')].find(c=>c.querySelector('input')?.value===t);
+   let sel=card?.querySelector('select');if(sel)sel.value=String(p.counts?.[t]||1);
+ });
+ renderSelectedTestCounts();
+}
+function applyPresetLabel(v){
+ let map={'50x30':[50,30,3],'70x30':[70,30,3],'70x40':[70,40,3],'90x36':[90,36,5],'100x50':[100,50,5]};
+ if(v==='custom'){showCustomLabel();return}
+ let a=map[v];if(!a)return;
+ $('labelW').value=a[0];$('labelH').value=a[1];$('labelM').value=a[2];
+ $('customLabelBox').style.display='none';saveLabelSize();
+}
+function showCustomLabel(){$('customLabelBox').style.display='grid'}
+function addPackage(){
+ let n=$('pkgName').value.trim(), selected=getPackageTestsFromUI();
+ if(!n)return toast('Nama paket wajib diisi');
+ if(!selected.length)return toast('Pilih minimal satu pemeriksaan');
+ let tests=selected.map(x=>x.name),counts={};selected.forEach(x=>counts[x.name]=x.count);
+ packages.push({id:String(Date.now()+Math.random()),name:n,tests,counts});
+ savePackages();$('pkgName').value='';renderPackageChecks([]);toast('Paket ditambahkan');
+}
+function renderPackages(){
+ let b=$('pkgBody'); if(!b)return;
+ b.innerHTML=packages.map((p,i)=>`<tr><td><b>${esc(p.name)}</b></td><td>${p.tests.map(t=>`<span class="badge">${esc(t)} × ${p.counts[t]||1}</span>`).join('')}</td><td><button onclick="editPackage(${i})">Edit</button> <button class="danger" onclick="deletePackage(${i})">Hapus</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Belum ada paket.</td></tr>';
+}
+function editPackage(i){let p=packages[i];packages.splice(i,1);savePackages();loadPackageToUI(p);toast('Paket dimuat untuk diedit')}
+function deletePackage(i){if(confirm('Hapus paket ini?')){packages.splice(i,1);savePackages()}}
+function syncPackageSelect(){
+ let s=$('paket'); if(!s)return;
+ let current=s.value; s.innerHTML=packages.length?packages.map(p=>`<option>${esc(p.name)}</option>`).join(''):'<option>MCU Karyawan</option><option>MCU Pra-Kerja</option><option>MCU Berkala</option><option>MCU Lengkap</option><option>Lainnya</option>'; 
+ if([...s.options].some(o=>o.value===current))s.value=current;
+ renderPackageSummary();
+}
+function getPackageByName(n){return packages.find(p=>p.name===n)}
+function saveLabelSize(){labelSize={w:Math.max(20,+$('labelW').value||90),h:Math.max(15,+$('labelH').value||36),m:Math.max(0,+$('labelM').value||0)};localStorage.setItem(SIZEKEY,JSON.stringify(labelSize));applyLabelSize();toast('Ukuran label disimpan')}
+function applyLabelSize(){document.documentElement.style.setProperty('--lw',labelSize.w+'mm');document.documentElement.style.setProperty('--lh',labelSize.h+'mm');document.documentElement.style.setProperty('--lm',labelSize.m+'mm')}
+function syncLabelPreset(){
+ let presets={'50x30':[50,30],'70x30':[70,30],'70x40':[70,40],'90x36':[90,36],'100x50':[100,50]};
+ let found=Object.entries(presets).find(([k,v])=>v[0]===+labelSize.w&&v[1]===+labelSize.h);
+ document.querySelectorAll('input[name="labelPreset"]').forEach(r=>r.checked=found?r.value===found[0]:r.value==='custom');
+ $('customLabelBox').style.display=found?'none':'grid';
+}
+
+function expandLabelsForParticipant(x){
+ let chosen=(x.printLabels||x.labels||'').split('|').filter(Boolean), p=getPackageByName(x.paket);
+ if(p){let a=[];p.tests.filter(t=>chosen.includes(t)).forEach(t=>{for(let i=0;i<(p.counts[t]||1);i++)a.push(t)});return a}
+ return chosen;
+}
+const KEY='MCU_REG_V2_DATA';
+const SETKEY='MCU_REG_V2_LABELS';
+let data=JSON.parse(localStorage.getItem(KEY)||'[]');
+let labels=JSON.parse(localStorage.getItem(SETKEY)||'["DARAH","URINE","FORM MCU","EKG","RONTGEN","LAINNYA"]');
+const $=id=>document.getElementById(id);
+function today(){return new Date().toISOString().slice(0,10)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function saveLocal(){localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(SETKEY,JSON.stringify(labels));updateDash()}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));if(id==='data')renderTable();if(id==='dashboard')updateDash();if(id==='pengaturan')renderSettings();if(id==='registrasi'){renderRegistrationSearch();renderEditRegistrationSearch()}}
+function nextReg(){let n=data.reduce((m,x)=>Math.max(m,parseInt(String(x.reg||'').replace(/\D/g,''))||0),0)+1;return 'MCU-'+String(n).padStart(5,'0')}
+function calcAge(){let s=$('lahir').value;if(!s){$('usia').value='';return}let b=new Date(s),d=new Date(),a=d.getFullYear()-b.getFullYear();if(d.getMonth()<b.getMonth()||(d.getMonth()===b.getMonth()&&d.getDate()<b.getDate()))a--;$('usia').value=a}
+
+let currentPhoto='',cameraStream=null;
+function setPhoto(src){currentPhoto=src||'';let img=$('photoPreview');if(!img)return;if(currentPhoto){img.src=currentPhoto;img.classList.remove('photo-placeholder')}else{img.removeAttribute('src');img.classList.add('photo-placeholder');img.alt='Belum ada foto peserta'}}
+function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}let video=$('cameraLive');if(video){video.srcObject=null;video.style.display='none'}let b=$('captureBtn');if(b)b.style.display='none'}
+async function startCamera(){
+ if(!navigator.mediaDevices?.getUserMedia)return toast('Browser ini tidak mendukung akses kamera. Silakan unggah foto.');
+ try{stopCamera();cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});let video=$('cameraLive');video.srcObject=cameraStream;video.style.display='block';$('captureBtn').style.display='inline-block';await video.play()}catch(e){toast('Kamera tidak dapat dibuka. Periksa izin browser atau unggah foto.');}
+}
+function resizePhoto(source,w,h){let max=640,scale=Math.min(1,max/Math.max(w,h));let c=$('photoCanvas');c.width=Math.max(1,Math.round(w*scale));c.height=Math.max(1,Math.round(h*scale));c.getContext('2d').drawImage(source,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+function capturePhoto(){let video=$('cameraLive');if(!video?.videoWidth)return toast('Kamera belum siap');setPhoto(resizePhoto(video,video.videoWidth,video.videoHeight));stopCamera();toast('Foto peserta berhasil diambil')}
+function retakePhoto(){setPhoto('');$('photoUpload').value='';stopCamera();toast('Foto dihapus. Anda dapat ambil atau unggah foto baru.');}
+function uploadPhoto(e){let f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('Pilih file gambar');let img=new Image();img.onload=()=>{setPhoto(resizePhoto(img,img.naturalWidth,img.naturalHeight));URL.revokeObjectURL(img.src);toast('Foto peserta berhasil dipilih')};img.onerror=()=>toast('Foto tidak dapat dibaca');img.src=URL.createObjectURL(f)}
+function renderPackageSummary(){let box=$('packageSummary'),p=getPackageByName($('paket')?.value);if(!box)return;if(!p){box.innerHTML='<span class="muted">Paket belum dikonfigurasi. Pilih pemeriksaan secara manual di bawah.</span>';return}box.innerHTML='<b>'+esc(p.name)+'</b><ul>'+p.tests.map(t=>'<li>✓ '+esc(t)+(p.counts?.[t]>1?' <span class="muted">('+p.counts[t]+' label)</span>':'')+'</li>').join('')+'</ul>'}
+function applySelectedPackage(){let p=getPackageByName($('paket').value);renderPackageSummary();if(!p)return;renderChecks(p.tests);renderPrintLabels(p.tests);}
+function renderPrintLabels(selected=[]){let box=$('printLabelGrid');if(!box)return;let choices=getSelectedLabels();let opts=selected.length?selected:choices;if(!opts.length)opts=labels;box.innerHTML=opts.map(l=>`<label class="check"><input type="checkbox" value="${esc(l)}" ${selected.includes(l)||(!selected.length&&choices.includes(l))?'checked':''}>${esc(l)}</label>`).join('')||'<span class="muted">Belum ada label.</span>'}
+function getSelectedPrintLabels(){return [...document.querySelectorAll('#printLabelGrid input:checked')].map(x=>x.value)}
+function selectAllPrintLabels(){document.querySelectorAll('#printLabelGrid input').forEach(x=>x.checked=true)}
+function clearPrintLabels(){document.querySelectorAll('#printLabelGrid input').forEach(x=>x.checked=false)}
+function printCurrentSelectedLabels(){let labelsToPrint=getSelectedPrintLabels();if(!labelsToPrint.length)return toast('Pilih label yang akan dicetak');let obj=readForm();if(!obj.nama)return toast('Isi nama peserta sebelum mencetak label');obj.printLabels=labelsToPrint.join('|');let old=$('editId').value||$('sourceId').value;let preview={...obj,id:old||'preview',reg:obj.reg||'BELUM DISIMPAN'};let area=$('printArea');area.innerHTML=buildLabels(preview);window.print();}
+
+function registeredList(){return data.filter(x=>String(x.reg||'').trim()!=='')}
+function importedList(){return data.filter(x=>String(x.reg||'').trim()==='')}
+
+function renderRegistrationSearch(){
+ if(!$('regSearchBody'))return;
+ let q=($('regSearch')?.value||'').trim().toLowerCase();
+ let arr=importedList().filter(x=>!q||[x.nama,x.nik,x.perusahaan,x.paket].join(' ').toLowerCase().includes(q));
+ $('regSearchBody').innerHTML=arr.slice(0,100).map(x=>`<tr>
+ <td><input class="importCheck" type="checkbox" value="${esc(x.id)}"></td>
+ <td><b>${esc(x.nama)}</b></td><td>${esc(x.nik)}</td><td>${esc(x.perusahaan)}</td><td>${esc(x.tgl)}</td><td>${esc(x.paket)}</td>
+ <td><button onclick="chooseImported('${esc(x.id)}')">Pilih</button> <button class="gray" onclick="editImported('${esc(x.id)}')">Edit</button> <button class="danger" onclick="deleteImported('${esc(x.id)}')">Hapus</button></td>
+ </tr>`).join('')||'<tr><td colspan="7" class="empty">Ketik nama, NIK, atau perusahaan untuk mencari calon peserta.</td></tr>';
+}
+
+function importedSelected(){
+ return [...document.querySelectorAll('.importCheck:checked')].map(x=>x.value);
+}
+function toggleImportedVisible(el){
+ document.querySelectorAll('.importCheck').forEach(x=>x.checked=el.checked);
+}
+function editImported(id){
+ let x=data.find(a=>a.id===id&&!a.reg); if(!x)return;
+ showPage('registrasi');
+ $('sourceId').value=x.id;$('editId').value='';
+ $('reg').value='';
+ $('tgl').value=x.tgl||today();$('nik').value=x.nik||'';$('nama').value=x.nama||'';$('jk').value=x.jk||'';
+ $('lahir').value=x.lahir||'';$('usia').value=x.usia||'';$('hp').value=x.hp||'';$('perusahaan').value=x.perusahaan||'';
+ $('bagian').value=x.bagian||'';$('jabatan').value=x.jabatan||'';syncPackageSelect();$('paket').value=x.paket||packages[0]?.name||'MCU Karyawan';
+ $('ket').value=x.ket||'';$('saveBtn').textContent='Simpan Data Calon';$('formTitle').textContent='✏️ Edit Calon Peserta';
+ renderChecks();let ls=(x.labels||'').split('|');document.querySelectorAll('#checkgrid input').forEach(c=>c.checked=ls.includes(c.value));renderPackageSummary();renderPrintLabels((x.printLabels||x.labels||'').split('|').filter(Boolean));setPhoto(x.photo||'');
+}
+function deleteImported(id){
+ let x=data.find(a=>a.id===id&&!a.reg);if(!x)return;
+ if(confirm('Hapus calon peserta "'+x.nama+'"?')){data=data.filter(a=>a.id!==id);saveLocal();renderRegistrationSearch();toast('Calon peserta dihapus')}
+}
+function deleteSelectedImported(){
+ let ids=importedSelected();if(!ids.length)return toast('Pilih calon peserta terlebih dahulu');
+ if(confirm('Hapus '+ids.length+' calon peserta yang dipilih?')){data=data.filter(x=>!ids.includes(x.id)||!!x.reg);saveLocal();renderRegistrationSearch();toast(ids.length+' calon peserta dihapus')}
+}
+function deleteAllImported(){
+ let n=importedList().length;if(!n)return toast('Tidak ada daftar import yang bisa dihapus');
+ if(confirm('Hapus SEMUA '+n+' calon peserta dari daftar import? Peserta yang sudah mendapat nomor registrasi tidak akan dihapus.')){
+   data=data.filter(x=>!!x.reg);saveLocal();renderRegistrationSearch();toast('Semua daftar import dihapus')
+ }
+}
+function clearRegistrationSearch(){$('regSearch').value='';renderRegistrationSearch()}
+function renderEditRegistrationSearch(){
+ if(!$('editRegSearchBody'))return;
+ let q=($('editRegSearch')?.value||'').trim().toLowerCase();
+ let arr=registeredList().filter(x=>!q||[x.nama,x.nik,x.perusahaan,x.reg,x.paket].join(' ').toLowerCase().includes(q));
+ $('editRegSearchBody').innerHTML=arr.slice(0,50).map(x=>`<tr><td><b>${esc(x.reg)}</b></td><td>${esc(x.nama)}</td><td>${esc(x.nik)}</td><td>${esc(x.perusahaan)}</td><td>${esc(x.tgl)}</td><td><button onclick="editParticipant('${esc(x.id)}')">Edit</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Ketik nama, NIK, atau nomor registrasi untuk mencari.</td></tr>';
+}
+function clearEditRegistrationSearch(){$('editRegSearch').value='';renderEditRegistrationSearch()}
+function chooseImported(id){
+ let x=data.find(a=>a.id===id&&!a.reg);if(!x)return;
+ showPage('registrasi');
+ $('sourceId').value=x.id;$('editId').value='';$('reg').value='';
+ $('tgl').value=x.tgl||today();$('nik').value=x.nik||'';$('nama').value=x.nama||'';$('jk').value=x.jk||'';
+ $('lahir').value=x.lahir||'';$('usia').value=x.usia||'';$('hp').value=x.hp||'';$('perusahaan').value=x.perusahaan||'';
+ $('bagian').value=x.bagian||'';$('jabatan').value=x.jabatan||'';syncPackageSelect();$('paket').value=x.paket||packages[0]?.name||'MCU Karyawan';
+ $('ket').value=x.ket||'';$('saveBtn').textContent='Daftarkan Kedatangan';$('formTitle').textContent='Daftarkan Kedatangan';
+ renderChecks();let ls=(x.labels||'').split('|');document.querySelectorAll('#checkgrid input').forEach(c=>c.checked=ls.includes(c.value));renderPackageSummary();renderPrintLabels((x.printLabels||x.labels||'').split('|').filter(Boolean));setPhoto(x.photo||'');
+}
+function nextArrivalReg(){
+ let max=0;registeredList().forEach(x=>{let m=String(x.reg||'').match(/MCU-(\d+)$/);if(m)max=Math.max(max,parseInt(m[1])||0)});
+ return 'MCU-'+String(max+1).padStart(5,'0');
+}
+function readForm(){
+ return {
+  id:$('editId').value||$('sourceId').value||(crypto.randomUUID?.()||String(Date.now()+Math.random())),
+  reg:$('reg').value,tgl:$('tgl').value,nik:$('nik').value.trim(),nama:$('nama').value.trim(),jk:$('jk').value,
+  lahir:$('lahir').value,usia:$('usia').value,hp:$('hp').value.trim(),perusahaan:$('perusahaan').value.trim(),
+  bagian:$('bagian').value.trim(),jabatan:$('jabatan').value.trim(),paket:$('paket').value,
+  labels:getSelectedLabels().join('|'),printLabels:getSelectedPrintLabels().join('|'),photo:currentPhoto,ket:$('ket').value.trim(),printed:false
+ };
+}
+function renderChecks(selected=[]){ $('checkgrid').innerHTML=labels.map(l=>`<label class="check"><input type="checkbox" value="${esc(l)}" ${selected.includes(l)?'checked':''} onchange="renderPrintLabels()">${esc(l)}</label>`).join('')}
+function getSelectedLabels(){return [...document.querySelectorAll('#checkgrid input:checked')].map(x=>x.value)}
+function resetForm(){$('saveBtn').textContent='Daftarkan Kedatangan';['editId','sourceId','reg','nik','nama','lahir','usia','hp','perusahaan','bagian','jabatan','ket'].forEach(i=>$(i).value='');$('tgl').value=today();$('reg').value='';$('jk').value='';syncPackageSelect();$('paket').value=packages[0]?.name||'MCU Karyawan';$('formTitle').textContent='Registrasi Peserta';renderChecks();renderPackageSummary();renderPrintLabels();setPhoto('');$('photoUpload').value='';stopCamera()}
+function saveParticipant(){
+ let obj=readForm();if(!obj.nama)return toast('Nama peserta wajib diisi');
+ let source=$('sourceId').value, editing=$('editId').value;
+ if(!editing && source && $('saveBtn').textContent==='Simpan Data Calon'){
+   let idx=data.findIndex(x=>x.id===source&&!x.reg);
+   if(idx<0)return toast('Calon peserta tidak ditemukan');
+   obj.id=source;obj.reg='';obj.printed=false;data[idx]=obj;saveLocal();toast('Data calon peserta diperbarui');resetForm();renderRegistrationSearch();showPage('registrasi');return;
+ }
+ if(!editing && source){
+   let existing=data.find(x=>x.id===source);
+   if(existing && !existing.reg){
+     obj.id=source; obj.reg=nextArrivalReg(obj.tgl); obj.printed=false; data[data.findIndex(x=>x.id===source)]=obj;
+   } else return toast('Peserta sudah terdaftar');
+ }else if(editing){
+   let idx=data.findIndex(x=>x.id===editing);if(idx>=0){obj.id=editing;obj.reg=data[idx].reg;obj.printed=data[idx].printed||false;data[idx]=obj}
+ }else{
+   obj.id=crypto.randomUUID?.()||String(Date.now()+Math.random());
+   obj.reg=nextArrivalReg(obj.tgl);obj.printed=false;data.push(obj);
+ }
+ saveLocal();toast('Data registrasi '+obj.reg+' berhasil disimpan');resetForm();renderRegistrationSearch();renderEditRegistrationSearch();showPage('data')
+}
+function saveAndPrint(){
+ let obj=readForm();if(!obj.nama)return toast('Nama peserta wajib diisi');
+ let source=$('sourceId').value, editing=$('editId').value;
+ if(!editing && source){
+   let idx=data.findIndex(x=>x.id===source);if(idx<0||data[idx].reg)return toast('Peserta sudah terdaftar');
+   obj.id=source;obj.reg=nextArrivalReg(obj.tgl);obj.printed=false;data[idx]=obj;
+ }else if(editing){
+   let idx=data.findIndex(x=>x.id===editing);if(idx>=0){obj.id=editing;obj.reg=data[idx].reg;obj.printed=false;data[idx]=obj}
+ }else{obj.id=crypto.randomUUID?.()||String(Date.now()+Math.random());obj.reg=nextArrivalReg(obj.tgl);obj.printed=false;data.push(obj)}
+ saveLocal();printIds([obj.id]);resetForm();renderRegistrationSearch();renderEditRegistrationSearch()
+}
+function companies(){return [...new Set(data.map(x=>x.perusahaan).filter(Boolean))].sort()}
+function updateCompanyFilter(){let s=$('filterCompany'),old=s.value;s.innerHTML='<option value="">Semua perusahaan</option>'+companies().map(c=>`<option>${esc(c)}</option>`).join('');s.value=old}
+function filtered(){let q=($('search')?.value||'').toLowerCase(),fd=$('filterDate')?.value||'',fc=$('filterCompany')?.value||'';return data.filter(x=>(!q||Object.values(x).join(' ').toLowerCase().includes(q))&&(!fd||x.tgl===fd)&&(!fc||x.perusahaan===fc))}
+function renderTable(){updateCompanyFilter();let arr=filtered().filter(x=>!!x.reg);$('tbody').innerHTML=arr.length?arr.map(x=>{let ls=(x.labels||'').split('|').filter(Boolean),photo=x.photo?`<img class="data-photo" src="${esc(x.photo)}" alt="Foto ${esc(x.nama)}">`:'<span class="data-photo placeholder">👤</span>';return `<tr><td><input class="rowCheck" type="checkbox" value="${esc(x.id)}"></td><td>${photo}</td><td>${esc(x.reg)}</td><td>${esc(x.tgl)}</td><td><b>${esc(x.nama)}</b></td><td>${esc(x.nik)}</td><td>${esc(x.perusahaan)}</td><td>${esc(x.paket)}</td><td>${ls.map(l=>`<span class="badge">${esc(l)}</span>`).join('')||'-'}</td><td>${x.printed?'<span class="badge">Sudah dicetak</span>':'<span class="badge">Belum dicetak</span>'}</td><td><button onclick="editParticipant('${esc(x.id)}')">Edit</button> <button class="gray" onclick="openLabelPicker(['${esc(x.id)}'])">Label</button> <button class="danger" onclick="deleteOne('${esc(x.id)}')">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty">Belum ada data peserta.</td></tr>'}
+function selected(){return [...document.querySelectorAll('.rowCheck:checked')].map(x=>x.value)}
+function toggleVisible(el){document.querySelectorAll('.rowCheck').forEach(x=>x.checked=el.checked)}
+function selectVisible(){document.querySelectorAll('.rowCheck').forEach(x=>x.checked=true)}
+function deleteOne(id){if(confirm('Hapus peserta ini?')){data=data.filter(x=>x.id!==id);saveLocal();renderTable()}}
+function deleteSelected(){let ids=selected();if(!ids.length)return toast('Pilih peserta terlebih dahulu');if(confirm('Hapus '+ids.length+' peserta?')){data=data.filter(x=>!ids.includes(x.id));saveLocal();renderTable()}}
+function markPrinted(){let ids=selected();if(!ids.length)return toast('Pilih peserta terlebih dahulu');data.forEach(x=>{if(ids.includes(x.id))x.printed=true});saveLocal();renderTable();toast('Status label diperbarui')}
+function editParticipant(id){let x=data.find(a=>a.id===id&&a.reg);if(!x)return;showPage('registrasi');$('editId').value=x.id;$('sourceId').value='';$('reg').value=x.reg;$('saveBtn').textContent='Simpan Perubahan';$('tgl').value=x.tgl;$('nik').value=x.nik;$('nama').value=x.nama;$('jk').value=x.jk;$('lahir').value=x.lahir;$('usia').value=x.usia;$('hp').value=x.hp;$('perusahaan').value=x.perusahaan;$('bagian').value=x.bagian;$('jabatan').value=x.jabatan;$('paket').value=x.paket;$('ket').value=x.ket;$('formTitle').textContent='✏️ Edit Registrasi '+x.reg;renderChecks();let ls=(x.labels||'').split('|');document.querySelectorAll('#checkgrid input').forEach(c=>c.checked=ls.includes(c.value));renderPackageSummary();renderPrintLabels((x.printLabels||x.labels||'').split('|').filter(Boolean));setPhoto(x.photo||'')}
+let pickerIds=[];
+function eligibleLabels(x){let tests=(x.labels||'').split('|').filter(Boolean);let p=getPackageByName(x.paket);return tests.length?tests:(p?.tests||[])}
+function openLabelPicker(ids){
+ let records=data.filter(x=>ids.includes(x.id));if(!records.length)return toast('Pilih peserta terlebih dahulu');pickerIds=records.map(x=>x.id);
+ let options=[...new Set(records.flatMap(eligibleLabels))],saved=[...new Set(records.flatMap(x=>(x.printLabels||x.labels||'').split('|').filter(Boolean)))];
+ if(!options.length)return toast('Peserta ini belum memiliki label pemeriksaan');
+ $('labelPickerHint').textContent=records.length===1?'Pilih label untuk '+records[0].nama+'.':'Pilih label untuk '+records.length+' peserta. Label yang tidak tersedia pada peserta tertentu akan dilewati.';
+ $('labelPickerGrid').innerHTML=options.map(l=>`<label class="check"><input type="checkbox" value="${esc(l)}" ${saved.includes(l)?'checked':''}>${esc(l)}</label>`).join('');
+ $('labelPickerModal').classList.add('open');
+}
+function closeLabelPicker(){$('labelPickerModal').classList.remove('open');pickerIds=[]}
+function selectAllPickerLabels(){document.querySelectorAll('#labelPickerGrid input').forEach(x=>x.checked=true)}
+function clearPickerLabels(){document.querySelectorAll('#labelPickerGrid input').forEach(x=>x.checked=false)}
+function confirmPickerPrint(){
+ let chosen=[...document.querySelectorAll('#labelPickerGrid input:checked')].map(x=>x.value);if(!chosen.length)return toast('Pilih minimal satu label');
+ let ids=[];data.forEach(x=>{if(pickerIds.includes(x.id)){let allowed=eligibleLabels(x),selectedLabels=chosen.filter(l=>allowed.includes(l));if(selectedLabels.length){x.printLabels=selectedLabels.join('|');ids.push(x.id)}}});
+ if(!ids.length)return toast('Tidak ada label yang sesuai untuk dicetak');closeLabelPicker();saveLocal();printIds(ids);
+}
+function printSelected(){let ids=selected();if(!ids.length)return toast('Pilih peserta terlebih dahulu');openLabelPicker(ids)}
+function buildLabels(x){let ls=expandLabelsForParticipant(x);if(!ls.length)ls=['MCU'];return ls.map(l=>`<div class="label"><div class="title">MEDICAL CHECK UP</div><div class="name">${esc(x.nama)}</div><div>No. Reg: <b>${esc(x.reg)}</b></div><div>NIK: ${esc(x.nik)}</div><div>Tgl MCU: ${esc(x.tgl)}</div><div>Perusahaan: ${esc(x.perusahaan)}</div><div class="type">● ${esc(l)}</div></div>`).join('')}
+function printIds(ids){let arr=data.filter(x=>ids.includes(x.id));if(!arr.length)return;let area=$('printArea');area.innerHTML=arr.map(buildLabels).join('');window.print();setTimeout(()=>{data.forEach(x=>{if(ids.includes(x.id))x.printed=true});saveLocal();renderTable()},500)}
+function setText(id,value){let el=$(id);if(el)el.textContent=String(value??'')}
+function setHTML(id,value){let el=$(id);if(el)el.innerHTML=value}
+function updateDash(){
+ let reg=registeredList(), imp=importedList();
+ setText('dTotal',reg.length);setText('dToday',reg.filter(x=>x.tgl===today()).length);
+ setText('dUnprinted',reg.filter(x=>!x.printed).length);setText('dImported',imp.length);setText('dCompany',companies().length);
+ setHTML('recent',reg.slice(-7).reverse().map(x=>`<div style="padding:8px 0;border-bottom:1px solid #eee"><b>${esc(x.nama)}</b> — ${esc(x.reg)} — ${esc(x.perusahaan||'-')} — ${esc(x.tgl)}</div>`).join('')||'<div class="empty">Belum ada data.</div>');
+}
+function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+const heads=['reg','tgl','nik','nama','jk','lahir','usia','hp','perusahaan','bagian','jabatan','paket','labels','printLabels','photo','ket','printed'];
+function exportCSV(){let out=[heads.join(',')].concat(data.map(x=>heads.map(h=>csvEscape(x[h])).join(','))).join('\r\n');let blob=new Blob(['\ufeff'+out],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='MCU_REGISTRASI_'+today()+'.csv';a.click();URL.revokeObjectURL(a.href)}
+function downloadTemplate(){
+ if(typeof XLSX==='undefined'){alert('Pembaca Excel belum siap. Pastikan internet aktif, tunggu beberapa detik, lalu coba lagi.');return}
+ const headers=['Tanggal MCU','NIK','Nama Lengkap','Jenis Kelamin','Tanggal Lahir','No. HP','Perusahaan / Instansi','Departemen / Bagian','Jabatan','Paket MCU','Keterangan'];
+ const examples=[['18/09/2026','327xxxxxxxxxxxxx','Ahmad Fauzi','Laki-laki','12/05/1995','08123456789','PT Contoh Sejahtera','Produksi','Operator','MCU Karyawan','']];
+ const ws=XLSX.utils.aoa_to_sheet([headers,...examples]);
+ ws['!cols']=[{wch:15},{wch:20},{wch:25},{wch:16},{wch:16},{wch:16},{wch:27},{wch:24},{wch:20},{wch:22},{wch:30}];
+ ws['!autofilter']={ref:'A1:K2'};
+ ws['!freeze']={xSplit:0,ySplit:1};
+ const info=[
+ ['PETUNJUK IMPORT PESERTA MCU'],
+ ['Isi satu baris untuk satu peserta. Jangan mengubah nama/header kolom.'],
+ ['Kolom wajib: Tanggal MCU dan Nama Lengkap.'],
+ ['Paket MCU harus sama dengan nama paket yang dibuat di aplikasi.'],
+ ['Setelah selesai, simpan file sebagai Excel (.xlsx) lalu import ke aplikasi.']
+ ];
+ const wi=XLSX.utils.aoa_to_sheet(info);wi['!cols']=[{wch:90}];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Data Peserta');XLSX.utils.book_append_sheet(wb,wi,'Petunjuk');
+ XLSX.writeFile(wb,'TEMPLATE_IMPORT_MCU.xlsx');
+}
+function downloadCSVTemplate(){
+ const headers=['Tanggal MCU','NIK','Nama Lengkap','Jenis Kelamin','Tanggal Lahir','No. HP','Perusahaan / Instansi','Departemen / Bagian','Jabatan','Paket MCU','Keterangan'];
+ const row=['18/09/2026','327xxxxxxxxxxxxx','Ahmad Fauzi','Laki-laki','12/05/1995','08123456789','PT Contoh Sejahtera','Produksi','Operator','MCU Karyawan',''];
+ const out=[headers,row].map(a=>a.map(csvEscape).join(',')).join('\r\n');
+ const blob=new Blob(['\ufeff'+out],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='TEMPLATE_IMPORT_MCU.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function parseCSV(t){let rows=[],row=[],c='',q=false;for(let i=0;i<t.length;i++){let x=t[i],n=t[i+1];if(x==='"'&&q&&n==='"'){c+='"';i++}else if(x==='"')q=!q;else if(x===','&&!q){row.push(c);c=''}else if((x==='\n'||x==='\r')&&!q){if(x==='\r'&&n==='\n')i++;row.push(c);if(row.some(v=>v!==''))rows.push(row);row=[];c=''}else c+=x}row.push(c);if(row.some(v=>v!==''))rows.push(row);return rows}
+function importCSV(e){
+ let f=e.target.files[0]; if(!f)return;
+ const isExcel=/\.(xlsx|xls)$/i.test(f.name);
+ if(isExcel){
+   if(typeof XLSX==='undefined'){
+     alert('Pembaca Excel belum siap. Pastikan internet aktif dan tunggu 2–5 detik setelah membuka aplikasi, lalu coba Import Excel lagi.');
+     e.target.value=''; return;
+   }
+   let r=new FileReader();
+   r.onload=()=>{
+     try{
+       let wb=XLSX.read(new Uint8Array(r.result),{type:'array'});
+       let ws=wb.Sheets[wb.SheetNames[0]];
+       let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+       processImportRows(rows);
+     }catch(err){console.error('Import Excel error',err); alert('Import Excel gagal: '+(err?.message||'File tidak valid')+'\n\nJika Anda memakai template aplikasi, kirimkan screenshot atau file Excel yang dipakai agar saya sesuaikan formatnya.')}
+     e.target.value='';
+   };
+   r.readAsArrayBuffer(f); return;
+ }
+ let r=new FileReader();
+ r.onload=()=>{
+   try{
+     let rows=parseCSV(r.result.replace(/^\ufeff/,''));
+     processImportRows(rows);
+   }catch(err){alert('File CSV tidak valid. Gunakan Template Import MCU.')}
+   e.target.value='';
+ };
+ r.readAsText(f);
+}
+function processImportRows(rows){
+ if(!Array.isArray(rows)||rows.length<2) throw new Error('Tidak ada data peserta pada file');
+ let headers=rows.shift().map(v=>String(v??'').trim());
+ const aliases={
+  'Tanggal MCU':'tgl','Tanggal_MCU':'tgl','tgl':'tgl',
+  'NIK':'nik','Nama Lengkap':'nama','Nama':'nama','nama':'nama',
+  'Jenis Kelamin':'jk','Jenis_Kelamin':'jk','jk':'jk',
+  'Tanggal Lahir':'lahir','Tanggal_Lahir':'lahir','lahir':'lahir',
+  'No. HP':'hp','No_HP':'hp','hp':'hp',
+  'Perusahaan / Instansi':'perusahaan','Perusahaan':'perusahaan','perusahaan':'perusahaan',
+  'Departemen / Bagian':'bagian','Departemen':'bagian','bagian':'bagian',
+  'Jabatan':'jabatan','Paket MCU':'paket','Paket_MCU':'paket','paket':'paket',
+  'Keterangan':'ket','ket':'ket'
+ };
+ let validHeaders=headers.filter(h=>aliases[h]);
+ if(!validHeaders.includes('Nama Lengkap') && !validHeaders.includes('Nama') && !validHeaders.includes('nama'))
+   throw new Error('Kolom Nama Lengkap tidak ditemukan');
+
+ let imported=0;
+ rows.forEach(row=>{
+   if(!row || row.every(v=>String(v??'').trim()==='')) return;
+   let o={
+    id:(crypto.randomUUID?.()||String(Date.now()+Math.random())),
+    reg:'', tgl:today(), nik:'', nama:'', jk:'', lahir:'', usia:'', hp:'',
+    perusahaan:'', bagian:'', jabatan:'', paket:packages[0]?.name||'MCU Karyawan',
+    labels:'', ket:'', printed:false
+   };
+   headers.forEach((h,i)=>{
+     let key=aliases[h]; if(key) o[key]=String(row[i]??'').trim();
+   });
+   if(!o.nama) return;
+
+   // Excel date serial -> YYYY-MM-DD, and common DD/MM/YYYY text -> YYYY-MM-DD.
+   const normalizeDate=(v)=>{
+     if(v===undefined||v===null||v==='') return '';
+     if(typeof v==='number' && isFinite(v)){
+       let d=new Date(Date.UTC(1899,11,30)+v*86400000);
+       return isNaN(d)?'':d.toISOString().slice(0,10);
+     }
+     let s=String(v).trim();
+     if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)){let [y,m,d]=s.split('-');return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;}
+     let m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+     if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+     return s;
+   };
+   o.tgl=normalizeDate(o.tgl)||today();
+   o.lahir=normalizeDate(o.lahir);
+
+   if(o.lahir){
+     let b=new Date(o.lahir+'T00:00:00'), d=new Date();
+     if(!isNaN(b)){
+       let a=d.getFullYear()-b.getFullYear();
+       if(d.getMonth()<b.getMonth()||(d.getMonth()===b.getMonth()&&d.getDate()<b.getDate()))a--;
+       o.usia=a;
+     }
+   }
+   // Imported participants NEVER receive a registration number.
+   o.reg='';
+   o.printed=false;
+   data.push(o); imported++;
+ });
+ if(!imported) throw new Error('Tidak ada peserta yang berhasil dibaca');
+ saveLocal();
+ renderTable();
+ renderRegistrationSearch();
+ updateDash();
+ toast(imported+' calon peserta berhasil diimport');
+}
+
+function clearAll(){if(confirm('Semua data peserta akan dihapus. Lanjutkan?')){data=[];saveLocal();renderTable();toast('Semua data dihapus')}}
+function renderSettings(){
+ $('settingsGrid').innerHTML=labels.map((l,i)=>`<div class="choice compact"><span><b>${esc(l)}</b><small>Label aktif</small></span><button class="danger" style="padding:5px 8px" onclick="removeLabel(${i})">Hapus</button></div>`).join('')||'<div class="hint">Belum ada jenis label.</div>';
+}
+function removeLabel(i){labels.splice(i,1);renderSettings()}
+function addLabel(){let n=prompt('Nama label baru:');if(n&&n.trim()&&!labels.includes(n.trim())){labels.push(n.trim());localStorage.setItem(SETKEY,JSON.stringify(labels));renderSettings();renderChecks();renderPackageChecks([])}}
+function saveSettings(){localStorage.setItem(SETKEY,JSON.stringify(labels));renderChecks();renderSettings();renderPackageChecks([]);toast('Jenis label disimpan')}
+function toast(s){let t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>t.style.display='none',2200)}
+$('labelW').value=labelSize.w;$('labelH').value=labelSize.h;$('labelM').value=labelSize.m;applyLabelSize();syncLabelPreset();renderPackages();renderSettings();renderPackageChecks([]);syncPackageSelect();resetForm();updateDash();renderRegistrationSearch();renderEditRegistrationSearch();showPage('dashboard');
+</script>
+</body>
+</html>
