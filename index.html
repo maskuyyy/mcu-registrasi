@@ -82,7 +82,7 @@ function exportXLSX(){
 .badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#edf4ff;margin:2px}
 </style></head>
 <body>
-<div id="authGate" class="auth-gate"><div class="auth-card"><h2>Sistem Registrasi MCU</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Kata sandi akun kantor"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button></div><p class="hint">Akun petugas dibuat dan diundang oleh Admin.</p><p id="authMessage" class="hint"></p></div></div>
+<div id="authGate" class="auth-gate"><div class="auth-card"><h2>Sistem Registrasi MCU</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Username atau Email<input id="authEmail" type="text" autocomplete="username" placeholder="regist1 atau email@kantor.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Kata sandi akun kantor"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button></div><p class="hint">Akun petugas dibuat oleh Admin. Username dapat dipakai tanpa mengetik alamat email.</p><p id="authMessage" class="hint"></p></div></div>
 <header><div class="header-row"><div><h1>Sistem Registrasi MCU</h1><small>Registrasi peserta, foto, paket pemeriksaan, dan pencetakan label</small></div><div id="userSession" class="user-session" hidden><span id="userRoleBadge" class="badge"></span><button type="button" onclick="signOutStaff()">Keluar</button></div></div></header>
 <nav id="nav">
 <button data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
@@ -720,11 +720,13 @@ $('labelW').value=labelSize.w;$('labelH').value=labelSize.h;$('labelM').value=la
 <script>
 /* Sinkronisasi Supabase: kunci anon aman di browser karena seluruh tabel memakai RLS. */
 const SUPABASE_URL='https://tabvlkwmkgvmqcgttfyu.supabase.co';
+const USERNAME_DOMAIN='mcu.local';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnZsa3dta2d2bXFjZ3R0Znl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MjU5OTgsImV4cCI6MjEwNTQwMTk5OH0.uPhJOBY1BDNyINyvDyMtlIClgdUv_Yu0RcNZ2T28hlY';
 let sb=null,remoteReady=false,remoteTimer=null,currentUser=null,currentRole='petugas';
 const splitLabels=v=>Array.isArray(v)?v:(v||'').split('|').filter(Boolean);
 const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v||'');
 function authMessage(text,problem=false){let e=$('authMessage');e.textContent=text;e.style.color=problem?'#b42318':'var(--muted)'}
+function normalizeLogin(value){let v=(value||'').trim().toLowerCase();if(v.includes('@'))return v;if(!/^[a-z0-9._-]{3,32}$/.test(v))return '';return v+'@'+USERNAME_DOMAIN}
 function showAuth(){ $('authGate').style.display='flex';$('userSession').hidden=true;remoteReady=false }
 function hideAuth(){ $('authGate').style.display='none' }
 function applyRoleAccess(role){
@@ -740,8 +742,8 @@ async function loadCurrentRole(){
  if(error)throw error;applyRoleAccess(roleRow?.role||'petugas');
 }
 async function signInStaff(){
- if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=$('authEmail').value.trim(),password=$('authPassword').value;
- if(!email||!password)return authMessage('Masukkan email dan kata sandi.',true);authMessage('Memeriksa akun…');
+ if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=normalizeLogin($('authEmail').value),password=$('authPassword').value;
+ if(!email||!password)return authMessage('Masukkan username/email dan kata sandi.',true);authMessage('Memeriksa akun…');
  let {error}=await sb.auth.signInWithPassword({email,password});if(error)return authMessage(error.message,true);
  await startRemote();
 }
