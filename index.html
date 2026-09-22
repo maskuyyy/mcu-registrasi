@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MCU REGISTRASI V2 - Import Fix</title>
+<title>Sistem Registrasi MCU</title>
 <style>
 :root{--p:#173b68;--bg:#f4f7fb;--line:#dbe2ea;--text:#172033;--muted:#667085}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -31,10 +31,10 @@ body{background:#fff}header,nav,main>.page{display:none!important}#printArea{dis
 }
 .label{width:var(--lw,90mm);min-height:var(--lh,36mm);margin:var(--lm,5mm) auto;border:1px solid #111;margin:5mm auto;padding:4mm;font-family:Arial;page-break-inside:avoid}
 .label .title{font-size:11px;font-weight:bold}.label .name{font-size:17px;font-weight:bold;margin:3px 0}.label .type{font-size:15px;font-weight:bold;margin-top:4px}
-.registration-top{display:grid;grid-template-columns:minmax(220px,310px) 1fr;gap:16px;align-items:start}.photo-box{border:1px dashed #9eb4cc;border-radius:10px;padding:12px;background:#f8fbff}.photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e8eef5;display:block}.photo-placeholder{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:18px}.camera-live{width:100%;margin-top:10px;border-radius:8px;background:#111;display:none}.package-summary{border:1px solid #bed6ef;background:#f3f8fe;border-radius:9px;padding:11px;margin:8px 0}.package-summary ul{margin:7px 0 0;padding-left:20px}.data-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line);vertical-align:middle}.data-photo.placeholder{background:#edf2f7;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.registration-top{display:grid;grid-template-columns:minmax(220px,310px) 1fr;gap:16px;align-items:start}.registration-panel{padding:0;overflow:hidden}.registration-heading{padding:18px 18px 14px;background:linear-gradient(135deg,#f7fbff,#eef6ff);border-bottom:1px solid #dce8f4}.registration-heading h2{margin:0}.registration-heading p{margin:6px 0 0}.registration-body{padding:18px}.reg-section{border:1px solid #dbe6f1;border-radius:11px;padding:14px;margin-top:14px;background:#fff}.reg-section h3{margin:0 0 5px;font-size:15px;color:#173b68}.reg-section>p{margin:0 0 10px}.section-kicker{color:#1769aa;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}.selection-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 2px}.photo-box{border:1px dashed #9eb4cc;border-radius:10px;padding:12px;background:#f8fbff}.photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e8eef5;display:block}.photo-placeholder{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:18px}.camera-live{width:100%;margin-top:10px;border-radius:8px;background:#111;display:none}.package-summary{border:1px solid #bed6ef;background:#f3f8fe;border-radius:9px;padding:11px;margin:8px 0}.package-summary ul{margin:7px 0 0;padding-left:20px}.data-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line);vertical-align:middle}.data-photo.placeholder{background:#edf2f7;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
 .modal-backdrop{display:none;position:fixed;inset:0;background:#17203399;z-index:80;padding:16px;align-items:center;justify-content:center}.modal-backdrop.open{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 12px 30px #0005}.modal h3{margin:0 0 6px}
 .auth-gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:#173b68}.auth-card{width:min(420px,100%);background:#fff;border-radius:14px;padding:24px;box-shadow:0 18px 45px #0006}.auth-card h2{margin-top:0}.auth-card .hint{margin-bottom:14px}
-@media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}}
+@media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}.registration-body{padding:13px}.registration-heading{padding:15px 13px}.reg-section{padding:12px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -83,7 +83,7 @@ function exportXLSX(){
 </style></head>
 <body>
 <div id="authGate" class="auth-gate"><div class="auth-card"><h2>MCU Registrasi</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button><button class="gray" onclick="signUpStaff()">Daftar Petugas</button></div><p id="authMessage" class="hint"></p></div></div>
-<header><h1>MCU REGISTRASI V2</h1><small>Demo sistem pendaftaran Medical Check Up — tanpa login</small></header>
+<header><h1>Sistem Registrasi MCU</h1><small>Registrasi peserta, foto, paket pemeriksaan, dan pencetakan label</small></header>
 <nav id="nav">
 <button data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
 <button data-page="registrasi" onclick="showPage('registrasi')">+ Registrasi Kedatangan</button>
@@ -134,8 +134,9 @@ function exportXLSX(){
 </div>
 </div>
 
-<div class="panel">
-<h2 id="formTitle">Registrasi Kedatangan</h2>
+<div class="panel registration-panel">
+<div class="registration-heading"><div class="section-kicker">Pendaftaran Peserta</div><h2 id="formTitle">Registrasi Kedatangan</h2><p class="muted">Lengkapi data peserta, pilih paket, lalu tentukan label yang akan dicetak.</p></div>
+<div class="registration-body">
 <input type="hidden" id="editId"><input type="hidden" id="sourceId">
 <div class="registration-top">
 <div class="photo-box">
@@ -166,19 +167,27 @@ function exportXLSX(){
 <div><label>Paket MCU</label><select id="paket" onchange="applySelectedPackage()"><option>MCU Karyawan</option><option>MCU Pra-Kerja</option><option>MCU Berkala</option><option>MCU Lengkap</option><option>Lainnya</option></select></div>
 </div>
 </div>
-<h3>📦 Pemeriksaan dalam Paket</h3>
+<div class="reg-section">
+<div class="section-kicker">Langkah 2</div><h3>📦 Paket & Pemeriksaan</h3>
+<p class="muted">Paket yang dipilih akan menampilkan pemeriksaan yang sudah diatur pada menu Pengaturan MCU.</p>
 <div id="packageSummary" class="package-summary"><span class="muted">Pilih paket untuk melihat pemeriksaan yang termasuk di dalamnya.</span></div>
-<h3>Label Pemeriksaan</h3>
+<div class="selection-toolbar"><h3>Label Pemeriksaan</h3><span class="hint">Sesuaikan bila diperlukan</span></div>
 <div class="checkgrid" id="checkgrid"></div>
-<h3>🏷️ Label yang Akan Dicetak</h3>
-<p class="muted">Pilihan ini terpisah dari pemeriksaan peserta. Hanya label yang dicentang di sini yang dicetak.</p>
+</div>
+<div class="reg-section">
+<div class="section-kicker">Langkah 3</div><h3>🏷️ Label yang Akan Dicetak</h3>
+<p class="muted">Pilihan cetak terpisah dari pemeriksaan peserta. Hanya label yang dicentang di sini yang akan dicetak.</p>
 <div class="actions"><button type="button" class="gray" onclick="selectAllPrintLabels()">Pilih Semua</button><button type="button" class="gray" onclick="clearPrintLabels()">Hapus Semua</button><button type="button" onclick="printCurrentSelectedLabels()">🖨 Cetak Label Terpilih</button></div>
 <div class="checkgrid" id="printLabelGrid"></div>
+</div>
+<div class="reg-section">
+<div class="section-kicker">Langkah 4</div><h3>Catatan & Penyimpanan</h3>
 <div style="margin-top:12px"><label>Keterangan</label><textarea id="ket" placeholder="Keterangan tambahan"></textarea></div>
 <div class="actions" style="margin-top:14px">
 <button id="saveBtn" onclick="saveParticipant()">Daftarkan Kedatangan</button>
 <button class="gray" onclick="resetForm()">Reset / Batal Edit</button>
 <button class="orange" onclick="saveAndPrint()">Simpan & Cetak Label</button>
+</div>
 </div>
 </div>
 </section>
