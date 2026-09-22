@@ -7,7 +7,7 @@
 <style>
 :root{--p:#173b68;--bg:#f4f7fb;--line:#dbe2ea;--text:#172033;--muted:#667085}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:var(--p);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:10}
+header{background:var(--p);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:10}.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.user-session{display:flex;align-items:center;gap:8px;font-size:12px}.user-session button{padding:7px 10px;background:#ffffff22;border:1px solid #ffffff55}
 header h1{margin:0;font-size:21px}header small{opacity:.85}
 nav{display:flex;gap:7px;padding:9px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:9;overflow:auto}
 nav button{white-space:nowrap;background:#edf2f7;color:var(--p)}nav button.active{background:var(--p);color:#fff}
@@ -34,7 +34,7 @@ body{background:#fff}header,nav,main>.page{display:none!important}#printArea{dis
 .registration-top{display:grid;grid-template-columns:minmax(220px,310px) 1fr;gap:16px;align-items:start}.registration-panel{padding:0;overflow:hidden}.registration-heading{padding:18px 18px 14px;background:linear-gradient(135deg,#f7fbff,#eef6ff);border-bottom:1px solid #dce8f4}.registration-heading h2{margin:0}.registration-heading p{margin:6px 0 0}.registration-body{padding:18px}.reg-section{border:1px solid #dbe6f1;border-radius:11px;padding:14px;margin-top:14px;background:#fff}.reg-section h3{margin:0 0 5px;font-size:15px;color:#173b68}.reg-section>p{margin:0 0 10px}.section-kicker{color:#1769aa;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}.selection-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 2px}.photo-box{border:1px dashed #9eb4cc;border-radius:10px;padding:12px;background:#f8fbff}.photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e8eef5;display:block}.photo-placeholder{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:18px}.camera-live{width:100%;margin-top:10px;border-radius:8px;background:#111;display:none}.package-summary{border:1px solid #bed6ef;background:#f3f8fe;border-radius:9px;padding:11px;margin:8px 0}.package-summary ul{margin:7px 0 0;padding-left:20px}.data-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line);vertical-align:middle}.data-photo.placeholder{background:#edf2f7;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
 .modal-backdrop{display:none;position:fixed;inset:0;background:#17203399;z-index:80;padding:16px;align-items:center;justify-content:center}.modal-backdrop.open{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 12px 30px #0005}.modal h3{margin:0 0 6px}
 .auth-gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:#173b68}.auth-card{width:min(420px,100%);background:#fff;border-radius:14px;padding:24px;box-shadow:0 18px 45px #0006}.auth-card h2{margin-top:0}.auth-card .hint{margin-bottom:14px}
-@media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}.registration-body{padding:13px}.registration-heading{padding:15px 13px}.reg-section{padding:12px}}
+@media(max-width:700px){.registration-top{grid-template-columns:1fr}.photo-box{max-width:none}.registration-body{padding:13px}.registration-heading{padding:15px 13px}.reg-section{padding:12px}.header-row{align-items:flex-start}.user-session{flex-wrap:wrap;justify-content:flex-end}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -82,14 +82,14 @@ function exportXLSX(){
 .badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#edf4ff;margin:2px}
 </style></head>
 <body>
-<div id="authGate" class="auth-gate"><div class="auth-card"><h2>MCU Registrasi</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button><button class="gray" onclick="signUpStaff()">Daftar Petugas</button></div><p id="authMessage" class="hint"></p></div></div>
-<header><h1>Sistem Registrasi MCU</h1><small>Registrasi peserta, foto, paket pemeriksaan, dan pencetakan label</small></header>
+<div id="authGate" class="auth-gate"><div class="auth-card"><h2>Sistem Registrasi MCU</h2><p class="muted">Masuk sebagai petugas untuk mengakses data peserta yang tersinkron.</p><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com"></label><label style="display:block;margin-top:10px">Kata Sandi<input id="authPassword" type="password" autocomplete="current-password" placeholder="Kata sandi akun kantor"></label><div class="actions" style="margin-top:16px"><button onclick="signInStaff()">Masuk</button></div><p class="hint">Akun petugas dibuat dan diundang oleh Admin.</p><p id="authMessage" class="hint"></p></div></div>
+<header><div class="header-row"><div><h1>Sistem Registrasi MCU</h1><small>Registrasi peserta, foto, paket pemeriksaan, dan pencetakan label</small></div><div id="userSession" class="user-session" hidden><span id="userRoleBadge" class="badge"></span><button type="button" onclick="signOutStaff()">Keluar</button></div></div></header>
 <nav id="nav">
 <button data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
 <button data-page="registrasi" onclick="showPage('registrasi')">+ Registrasi Kedatangan</button>
 <button data-page="data" onclick="showPage('data')">Data Registrasi</button>
-<button data-page="import" onclick="showPage('import')">Import / Export</button>
-<button data-page="pengaturan" onclick="showPage('pengaturan')">Pengaturan MCU</button>
+<button data-page="import" data-admin-only onclick="showPage('import')">Import / Export</button>
+<button data-page="pengaturan" data-admin-only onclick="showPage('pengaturan')">Pengaturan MCU</button>
 </nav>
 
 <main>
@@ -121,7 +121,7 @@ function exportXLSX(){
 </div>
 </div>
 
-<div class="panel">
+<div class="panel" data-admin-only>
 <h2>✏️ Edit Registrasi yang Sudah Masuk</h2>
 <p class="muted">Gunakan menu ini jika petugas menemukan typo setelah peserta sudah mendapatkan nomor registrasi. Nomor registrasi tidak berubah.</p>
 <div class="actions">
@@ -203,7 +203,7 @@ function exportXLSX(){
 <button class="gray" onclick="selectVisible()">Pilih Semua</button>
 <button onclick="printSelected()">Cetak Label Terpilih</button>
 <button class="green" onclick="markPrinted()">Tandai Sudah Dicetak</button>
-<button class="danger" onclick="deleteSelected()">Hapus Terpilih</button>
+<button class="danger" data-admin-only onclick="deleteSelected()">Hapus Terpilih</button>
 </div>
 <div class="tablewrap" style="margin-top:12px">
 <table><thead><tr><th><input type="checkbox" onclick="toggleVisible(this)"></th><th>Foto</th><th>No. Reg</th><th>Tanggal</th><th>Nama</th><th>NIK</th><th>Perusahaan</th><th>Paket</th><th>Label</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -541,7 +541,7 @@ function saveAndPrint(){
 function companies(){return [...new Set(data.map(x=>x.perusahaan).filter(Boolean))].sort()}
 function updateCompanyFilter(){let s=$('filterCompany'),old=s.value;s.innerHTML='<option value="">Semua perusahaan</option>'+companies().map(c=>`<option>${esc(c)}</option>`).join('');s.value=old}
 function filtered(){let q=($('search')?.value||'').toLowerCase(),fd=$('filterDate')?.value||'',fc=$('filterCompany')?.value||'';return data.filter(x=>(!q||Object.values(x).join(' ').toLowerCase().includes(q))&&(!fd||x.tgl===fd)&&(!fc||x.perusahaan===fc))}
-function renderTable(){updateCompanyFilter();let arr=filtered().filter(x=>!!x.reg);$('tbody').innerHTML=arr.length?arr.map(x=>{let ls=(x.labels||'').split('|').filter(Boolean),photo=x.photo?`<img class="data-photo" src="${esc(x.photo)}" alt="Foto ${esc(x.nama)}">`:'<span class="data-photo placeholder">👤</span>';return `<tr><td><input class="rowCheck" type="checkbox" value="${esc(x.id)}"></td><td>${photo}</td><td>${esc(x.reg)}</td><td>${esc(x.tgl)}</td><td><b>${esc(x.nama)}</b></td><td>${esc(x.nik)}</td><td>${esc(x.perusahaan)}</td><td>${esc(x.paket)}</td><td>${ls.map(l=>`<span class="badge">${esc(l)}</span>`).join('')||'-'}</td><td>${x.printed?'<span class="badge">Sudah dicetak</span>':'<span class="badge">Belum dicetak</span>'}</td><td><button onclick="editParticipant('${esc(x.id)}')">Edit</button> <button class="gray" onclick="openLabelPicker(['${esc(x.id)}'])">Label</button> <button class="danger" onclick="deleteOne('${esc(x.id)}')">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty">Belum ada data peserta.</td></tr>'}
+function renderTable(){updateCompanyFilter();let arr=filtered().filter(x=>!!x.reg);$('tbody').innerHTML=arr.length?arr.map(x=>{let ls=(x.labels||'').split('|').filter(Boolean),photo=x.photo?`<img class="data-photo" src="${esc(x.photo)}" alt="Foto ${esc(x.nama)}">`:'<span class="data-photo placeholder">👤</span>',adminActions=currentRole==='admin'?`<button onclick="editParticipant('${esc(x.id)}')">Edit</button> <button class="danger" onclick="deleteOne('${esc(x.id)}')">Hapus</button>`:'';return `<tr><td><input class="rowCheck" type="checkbox" value="${esc(x.id)}"></td><td>${photo}</td><td>${esc(x.reg)}</td><td>${esc(x.tgl)}</td><td><b>${esc(x.nama)}</b></td><td>${esc(x.nik)}</td><td>${esc(x.perusahaan)}</td><td>${esc(x.paket)}</td><td>${ls.map(l=>`<span class="badge">${esc(l)}</span>`).join('')||'-'}</td><td>${x.printed?'<span class="badge">Sudah dicetak</span>':'<span class="badge">Belum dicetak</span>'}</td><td>${adminActions}<button class="gray" onclick="openLabelPicker(['${esc(x.id)}'])">Label</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty">Belum ada data peserta.</td></tr>'}
 function selected(){return [...document.querySelectorAll('.rowCheck:checked')].map(x=>x.value)}
 function toggleVisible(el){document.querySelectorAll('.rowCheck').forEach(x=>x.checked=el.checked)}
 function selectVisible(){document.querySelectorAll('.rowCheck').forEach(x=>x.checked=true)}
@@ -721,24 +721,31 @@ $('labelW').value=labelSize.w;$('labelH').value=labelSize.h;$('labelM').value=la
 /* Sinkronisasi Supabase: kunci anon aman di browser karena seluruh tabel memakai RLS. */
 const SUPABASE_URL='https://tabvlkwmkgvmqcgttfyu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnZsa3dta2d2bXFjZ3R0Znl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MjU5OTgsImV4cCI6MjEwNTQwMTk5OH0.uPhJOBY1BDNyINyvDyMtlIClgdUv_Yu0RcNZ2T28hlY';
-let sb=null,remoteReady=false,remoteTimer=null;
+let sb=null,remoteReady=false,remoteTimer=null,currentUser=null,currentRole='petugas';
 const splitLabels=v=>Array.isArray(v)?v:(v||'').split('|').filter(Boolean);
 const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v||'');
 function authMessage(text,problem=false){let e=$('authMessage');e.textContent=text;e.style.color=problem?'#b42318':'var(--muted)'}
-function showAuth(){ $('authGate').style.display='flex';remoteReady=false }
+function showAuth(){ $('authGate').style.display='flex';$('userSession').hidden=true;remoteReady=false }
 function hideAuth(){ $('authGate').style.display='none' }
+function applyRoleAccess(role){
+ currentRole=role==='admin'?'admin':'petugas';
+ document.querySelectorAll('[data-admin-only]').forEach(el=>el.hidden=currentRole!=='admin');
+ $('userRoleBadge').textContent=currentRole==='admin'?'Admin':'Petugas Registrasi';
+ $('userSession').hidden=false;
+ if(currentRole!=='admin'&&['import','pengaturan'].some(id=>$(id)?.classList.contains('active')))showPage('dashboard');
+}
+async function loadCurrentRole(){
+ let {data:{user},error:userError}=await sb.auth.getUser();if(userError||!user)throw new Error('Sesi petugas tidak ditemukan.');
+ currentUser=user;let {data:roleRow,error}=await sb.from('mcu_user_roles').select('role').eq('user_id',user.id).maybeSingle();
+ if(error)throw error;applyRoleAccess(roleRow?.role||'petugas');
+}
 async function signInStaff(){
  if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=$('authEmail').value.trim(),password=$('authPassword').value;
  if(!email||!password)return authMessage('Masukkan email dan kata sandi.',true);authMessage('Memeriksa akun…');
  let {error}=await sb.auth.signInWithPassword({email,password});if(error)return authMessage(error.message,true);
  await startRemote();
 }
-async function signUpStaff(){
- if(!sb)return authMessage('Koneksi Supabase belum siap.',true);let email=$('authEmail').value.trim(),password=$('authPassword').value;
- if(!email||password.length<6)return authMessage('Gunakan email dan kata sandi minimal 6 karakter.',true);authMessage('Mendaftarkan akun…');
- let {data:a,error}=await sb.auth.signUp({email,password});if(error)return authMessage(error.message,true);
- authMessage(a.session?'Akun berhasil dibuat.':'Periksa email untuk mengonfirmasi akun, lalu masuk.');if(a.session)await startRemote();
-}
+async function signOutStaff(){if(sb)await sb.auth.signOut();currentUser=null;currentRole='petugas';showAuth();authMessage('Anda sudah keluar.')}
 function rowFromParticipant(x){
  if(!isUuid(x.id))x.id=crypto.randomUUID();
  return {id:x.id,reg:x.reg||null,tgl:x.tgl||null,nik:x.nik||null,nama:x.nama||'',jk:x.jk||null,lahir:x.lahir||null,usia:+x.usia||null,hp:x.hp||null,perusahaan:x.perusahaan||null,bagian:x.bagian||null,jabatan:x.jabatan||null,paket:x.paket||null,labels:splitLabels(x.labels),print_labels:splitLabels(x.printLabels||x.labels),photo_path:x.photoPath||null,ket:x.ket||null,printed:!!x.printed,updated_at:new Date().toISOString()};
@@ -775,7 +782,7 @@ async function loadRemoteData(){
 }
 async function startRemote(){
  remoteReady=true;hideAuth();authMessage('');
- try{await loadRemoteData()}catch(e){console.error(e);showAuth();authMessage('Data tidak dapat dimuat: '+e.message,true)}
+ try{await loadCurrentRole();await loadRemoteData()}catch(e){console.error(e);showAuth();authMessage('Data tidak dapat dimuat: '+e.message,true)}
 }
 const saveLocalBeforeSupabase=saveLocal;
 saveLocal=function(){saveLocalBeforeSupabase();scheduleRemoteSync()}
@@ -788,7 +795,7 @@ saveLabelSize=function(){saveLabelSizeBeforeSupabase();saveRemoteSetting('labelS
 async function initSupabase(){
  if(!window.supabase)return authMessage('Library Supabase tidak dapat dimuat. Periksa koneksi internet.',true);
  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let {data:{session}}=await sb.auth.getSession();if(session)await startRemote();else showAuth();
- sb.auth.onAuthStateChange((_event,session)=>{if(!session)showAuth()});
+ sb.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;showAuth()}});
 }
 initSupabase();
 </script>
